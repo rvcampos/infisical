@@ -147,7 +147,8 @@ export const fnSecretsV2FromImports = async ({
   depth = 0,
   cyclicDetector = new Set(),
   decryptor,
-  expandSecretReferences
+  expandSecretReferences,
+  secretsOverride = []
 }: {
   allowedImports: (Omit<TSecretImports, "importEnv"> & {
     importEnv: { id: string; slug: string; name: string };
@@ -164,6 +165,7 @@ export const fnSecretsV2FromImports = async ({
     secretPath: string;
     environment: string;
   }) => Promise<string | undefined>;
+  secretsOverride?: { secretKey: string; secretValue: string; folderPath: string }[];
 }) => {
   // avoid going more than a depth
   if (depth >= LEVEL_BREAK) return [];
@@ -214,7 +216,8 @@ export const fnSecretsV2FromImports = async ({
       depth: depth + 1,
       cyclicDetector,
       decryptor,
-      expandSecretReferences
+      expandSecretReferences,
+      secretsOverride
     });
   }
   const secretsFromdeeperImportGroupedByFolderId = groupBy(secretsFromDeeperImports, (i) => i.importFolderId);
@@ -227,7 +230,9 @@ export const fnSecretsV2FromImports = async ({
       .map((item) => ({
         ...item,
         secretKey: item.key,
-        secretValue: decryptor(item.encryptedValue),
+        secretValue:
+          secretsOverride?.findLast((it) => it.secretKey === item.key && it.folderPath === importPath)?.secretValue ??
+          decryptor(item.encryptedValue),
         secretComment: decryptor(item.encryptedComment),
         environment: importEnv.slug,
         workspace: "", // This field should not be used, it's only here to keep the older Python SDK versions backwards compatible with the new Postgres backend.

@@ -749,7 +749,11 @@ export const secretV2BridgeServiceFactory = ({
       folderDAL,
       secretImportDAL,
       expandSecretReferences,
-      decryptor: (value) => (value ? secretManagerDecryptor({ cipherTextBlob: value }).toString() : "")
+      decryptor: (value) => (value ? secretManagerDecryptor({ cipherTextBlob: value }).toString() : ""),
+      // eslint-disable-next-line array-callback-return
+      secretsOverride: filteredSecrets.map((p) => {
+        return { secretKey: p.secretKey, secretValue: p.secretValue, folderPath: p.secretPath };
+      })
     });
 
     return {
